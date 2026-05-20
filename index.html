@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=240,height=282,user-scalable=no">
+<title>Alan Watts</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:240px;height:282px;overflow:hidden;background:#0e0e10;color:#fff;font-family:-apple-system,sans-serif;-webkit-user-select:none;user-select:none;position:relative}
+#hdr{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+#brd{font-size:10px;font-weight:700;letter-spacing:2px;color:#FE5000}
+#sd-lbl{font-size:10px;color:rgba(255,255,255,0.25);font-weight:600;letter-spacing:1px}
+#prog{width:100%;height:2px;background:rgba(255,255,255,0.06);flex-shrink:0}
+#prog-fill{height:100%;background:#FE5000;width:0%;transition:width .3s}
+#prog.idle{opacity:.15}
+#prog.playing{opacity:1}
+#vp{flex:1;overflow:hidden;position:relative}
+#lst{position:absolute;top:0;left:0;right:8px}
+.rw{display:flex;align-items:center;gap:8px;padding:0 10px 0 8px;height:38px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.rw.sel{background:rgba(254,80,0,0.08);border-left:2px solid #FE5000;padding-left:6px}
+.rw.ing{background:rgba(254,80,0,0.05)}
+.rw.nad{opacity:.35}
+.dc{width:28px;height:28px;flex-shrink:0;border-radius:4px}
+.lb{font-size:11px;color:rgba(255,255,255,0.85);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rw.ing .lb{color:#FE5000}
+#sbar{position:absolute;right:2px;top:4px;bottom:4px;width:2px;background:rgba(255,255,255,0.05);border-radius:2px;opacity:0}
+#sbar.sh{opacity:1}
+#stb{position:absolute;left:0;right:0;background:rgba(254,80,0,0.45);border-radius:2px}
+#np{position:absolute;top:0;left:0;width:240px;height:282px;z-index:10;display:none;pointer-events:none;background:#0e0e10}
+#np.sh{display:block}
+#np-em{position:absolute;top:0;left:0;width:240px;height:282px;z-index:5;display:none}
+#np-em.sh{display:block}
+#np-em iframe{width:240px;height:282px;border:none}
+
+#np{position:absolute;top:0;left:0;width:240px;height:282px;z-index:10;display:none;pointer-events:none;background:rgba(14,14,16,0.99)}
+#np.sh{display:block}
+#np-cv{position:absolute;top:20px;left:75px;width:90px;height:90px;pointer-events:none}
+#np-ti{position:absolute;top:168px;left:0;width:240px;text-align:center;font-size:13px;font-weight:600;padding:0 16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#np-si{position:absolute;top:188px;left:0;width:240px;text-align:center;font-size:9px;color:rgba(255,255,255,0.2);letter-spacing:1px;pointer-events:none}
+</style>
+</head>
+<body>
+
+<div id="m" style="display:flex;flex-direction:column;height:100%">
+  <div id="hdr">
+    <div id="brd">ALAN WATTS</div>
+    <div id="sd-lbl">ALBUMS</div>
+  </div>
+  <div id="prog" class="idle"><div id="prog-fill"></div></div>
+  <div id="vp">
+    <div id="lst"></div>
+    <div id="sbar"><div id="stb"></div></div>
+  </div>
+</div>
+
+<div id="np-em"></div>
+<div id="np">
+  <canvas id="np-cv" width="90" height="90"></canvas>
+  <div id="np-ti"></div>
+  <div id="np-si"></div>
+</div>
+
+<script>
+var ALBUMS = [
+  {name:"Buddhism",tracks:[
+    {name:"Net of Jewels",id:"1xrfDcvMhJU0P9ExXqQkh-c2icZaoNNzu"},
+    {name:"Problems in Meditation",id:"1ytQzuUUf9rAIU-cmuKkXnoar8oli1J7l"},
+    {name:"Thusness",id:"1TTS4hX9LoxdGhFnTjAxmkX47qJYwWHdw"},
+    {name:"World as Consciousness",id:"1gB2SwqEGmEVO6U1ivj1dyKpYt7oJN6MC"},
+    {name:"Zen Reconsidered",id:"1_VjDLAhu8-svdjh0unRA0YaD1p-STQcr"}
+  ]},
+  {name:"Comparative Philosophy",tracks:[
+    {name:"Mind Over Mind",id:"1L9iYXFFZudwqASUe02RtImrHXrzVCyj8"},
+    {name:"Philosophy of Nature",id:"1BW5deUnNn3OOO9k-f7zp7zum9k8cn_xr"},
+    {name:"The Cosmic Drama",id:"11aUefxhkNYeAAPZL3IwReLxQveMYHwFc"},
+    {name:"Spectrum of Love",id:"1q5wOqCpb_XXCUDjwAU64jGQHZloGkjU5"},
+    {name:"Love of Waters",id:"1zQzjuCtEVOpZJxbh_CWc4qJTAubJBsr-"},
+    {name:"Game of Yes and No",id:"1ZfeQqHc4m3KgG30UuPmbnquVKjFs552a"},
+    {name:"The Smell of Burnt Almonds",id:"16MGsjTZj0RmI70904Aj6bv6qRRWBKDO4"},
+    {name:"Spiritual Alchemy",id:"149gIFqlY0WiPOudGqByKwx0n6iyoonux"}
+  ]},
+  {name:"Comparative Religion",tracks:[
+    {name:"Four Ways to the Center",id:"1izFIYVIQEW21JxeGawcuqIDbTGVJzOO0"},
+    {name:"Worldly Religions",id:"1JFwsLnuL0ts6aWQ2s35G5-Vw9HIKolgM"}
+  ]},
+  {name:"Early Radio Talks",tracks:[]},
+  {name:"Eastern & Western Zen",tracks:[
+    {name:"Introduction to Zen",id:"1LgYN4W698MqxEqIm5AWhSGfarjbWlIlm"},
+    {name:"Early Chinese Zen",id:"1HsYSV9zQGIOv8CdTzOkEON9_jPzvs_mY"},
+    {name:"Uncarved Block",id:"1LffN7C4Fi-q7-XPGmZbVMSqNkJUGXeLv"},
+    {name:"Zen Bones",id:"1YZ0aqMrnEP1URmda-Ak__9dOxnRguFVi"},
+    {name:"Biting an Iron Bull",id:"1UgMEFQ0JtIuLXbeUQc5yau8eZbrwk0vK"},
+    {name:"World as Just So",id:"1k1V5QwgQxUxi_GLaeU9U0FeyY2BPINBr"}
+  ]},
+  {name:"Human Consciousness",tracks:[
+    {name:"Ecological Awareness",id:"12QrOBIeC552QJ8L1RMB9enV14GXa5aYu"},
+    {name:"Education for Non-Entity",id:"1rfMHNDTZ67ThiS4mDnPlIsfu2N1sRq23"},
+    {name:"Nature of Consciousness",id:"1ATHHNOvxlDMDauQ9XDam1p21_jEPonh7"},
+    {name:"Transformation of Consciousness",id:"1yMYVLPJz1945GDyR2nRzCUbmxU2yoR6a"}
+  ]},
+  {name:"Myth & Religion",tracks:[
+    {name:"Images of God",id:"1RDGgb-qknO25m9cvAg5A_KAPwj0DoCnx"},
+    {name:"Jesus His Religion",id:"1DOOJpi_iHhQUahLBVS5oEANm0AVAdxMj"},
+    {name:"Spiritual Authority",id:"11Z7DHS8N6dNV5-M3z0Eh0-Ia8jrazMyp"},
+    {name:"Image of Man",id:"17G__pH7Fn-oUMPr16tYyD-tMDtI-KvLW"},
+    {name:"Democracy in Heaven",id:"1mmC8sIjuK8YZ0GRD7BlV-D63fpBd8uX7"},
+    {name:"Religion and Sexuality",id:"1URzQyVxEhQuId4FpmACVdhZgWxP5Oepx"}
+  ]},
+  {name:"Philosophies of Asia",tracks:[
+    {name:"Relevance of Oriental Philosophy",id:"1A4F64DE1IAzXsRYNXruS4eM4XU-cB61z"},
+    {name:"Mythology of Hinduism",id:"1TDh7-GndhtY0nlbgrWTdI7j8gGJ-soFl"},
+    {name:"Introduction to Buddhism",id:"1_mveCHe8gQ-83m3F6x7V419dpbfylYC6"},
+    {name:"Eco-Zen",id:"1KYkNQpBUIZZGzltHl5NA8msZka_dggme"},
+    {name:"Taoist Way",id:"1x0sDw-Zr8hvyn4IJ5NBN7_q94Gd0w0R2"},
+    {name:"Intellectual Yoga",id:"1hg5XBNuRtQPdI_ds9soYcjpDWp6U4GRp"}
+  ]},
+  {name:"Philosophy Society",tracks:[
+    {name:"Veil of Thoughts",id:"1g1M6pG6nhNlipyZIoiVH0FD5dgxdoudX"},
+    {name:"Divine Madness",id:"1atIOQmcF5RMtt41eHOoiLgAUO5zuiOEh"},
+    {name:"We As Organism",id:"1yvmekMjEUKRoXv2etjyj2Id982Rlo97L"},
+    {name:"On Being God",id:"1oZ2Y5pPgpBYthjvDW9IkWQrS1qSl3q3o"},
+    {name:"Mysticism and Morality",id:"15xtCOV3iKKB2wmw5vaGzZbt0escMKCrb"},
+    {name:"What Is Reality",id:"1X5ojRWbFKi9mFdbry_sBqgX2tn4T4sYY"}
+  ]},
+  {name:"Religion of No Religion",tracks:[]},
+  {name:"Spiritual Alchemy",tracks:[
+    {name:"The Psychedelic Experience",id:"1QKVyg9oQkpJitjRQ8evn0YVY1u3a0FaR"},
+    {name:"The Psychedelic Explosion",id:"1hls050hclRcPqmQGx2TIj_q3DJNj3lY3"},
+    {name:"Turning the Head or Turning On",id:"1D9Wvaem789UVdZVJCdgDj5ZUUQJuRLu2"}
+  ]},
+  {name:"Tao of Philosophy",tracks:[
+    {name:"Not What Should Be",id:"1BFPWKQG6beV4bolaBd8ArPAoqCsCoI6T"},
+    {name:"Sense of Nonsense",id:"1bXFG23-Sjnk0WOX_8kE0RC2mGfqqlcfV"},
+    {name:"Coincidence of Opposites",id:"1-ylh7wfazA_lIGIKXKzqn-jWWyMSMB7h"},
+    {name:"Seeing Through the Net",id:"1CBNFeIdRg39yR1-KJ5L0Hxl8QSQffXh2"},
+    {name:"Myth of Myself",id:"1A6M6ihGjCz9WMKDFjY679NGnNTuQrG8Q"},
+    {name:"Man and Nature",id:"19XOjaycGErsUw3rPBiau2r1HOKzpKpgg"},
+    {name:"Limits of Language",id:"1bxrwqr-uoIFndCItFUZwmg8MYS-_BTra"}
+  ]},
+  {name:"Taoism",tracks:[
+    {name:"Swimming Headless",id:"1oS0MaOH3jeF2-FY8-chQMUIh1Nr5pEb2"},
+    {name:"Wisdom of the Ridiculous",id:"1Jmc-v1mqe1YTr-BXCfAqaOkAlLF_9Tw9"},
+    {name:"Philosophy of the Tao",id:"1ilpmRottCC088Q2EHnABH9Ji_jtxuTMR"},
+    {name:"Way Beyond Seeking",id:"1xJxMOT3qlGUchlbrZ7TyQGwtx64MdH_k"},
+    {name:"Landscape Soundscape",id:"1nQvrrRodALpz5BdWs22TV_IeICUJL9Gs"}
+  ]},
+  {name:"The Arts",tracks:[
+    {name:"Bushido",id:"1r-V_g5TFMeVVp6gOAAKnw8xx1BRH-yfK"},
+    {name:"The Importance of Space",id:"1xdHGEbbl0z_aA-0XFr7IEX0sR_MoCGYY"},
+    {name:"The Way of Tea",id:"1g8tmjQrT5h5MTe7RmaSvRZAq7vqqZ504"}
+  ]},
+  {name:"The Future",tracks:[
+    {name:"Future of Communications",id:"1lTK-LyLBBV10xkIlrSU0C2ZnMT05B7AW"},
+    {name:"Future of Politics",id:"1m4dS8Z1bsbhWvWSqPGmyM590YFopWb1E"},
+    {name:"Future of Religion",id:"1s1Dgfkb6aNPgcYsgFgGPgwxkP1iEthm4"},
+    {name:"Time and the Future",id:"1tQmTUOigQgfseYHQIjgeeBDh0rJZRqjG"}
+  ]},
+  {name:"The Self",tracks:[
+    {name:"Birth Death and the Unborn",id:"12bfLeBmkqkuI-fIHmrsB5uLKEVs0uCaX"},
+    {name:"Pursuit of Pleasure",id:"1F5gOFymF7VZ_QvUA0vHMAr7MUF3xgckE"},
+    {name:"World as Play",id:"1TXpF4HsSDgjXu0lRKmu1orLU1CaC0TSm"},
+    {name:"Play and Survival",id:"1EZGZFMIJGZ4VzKRk2K0FQ_0bC_GFrETY"},
+    {name:"World as Self",id:"1sSrhkUdPeOzL2A73vGB-8rTGn-H0KFTz"}
+  ]},
+  {name:"The Universe",tracks:[
+    {name:"Individual and the World",id:"1Yxg5NNWXH8FBetkzDqQhVEKo4NQXdgB2"},
+    {name:"The Power of Space",id:"1tnfv6jTuxZbNkvhMKoT3h4z93JR1QHIi"}
+  ]},
+  {name:"Ways of Liberation",tracks:[
+    {name:"Introduction to Eastern Philosophy",id:"1B1vyWMjJxxRsIoRGvj-rsm5d6FMc_eXl"},
+    {name:"On Buddhism",id:"1sXCJI2K0AJu0mAELgt91zwONQxsd2sdE"},
+    {name:"On Taoism",id:"1S_zfHAk1CXbup73XGarV22Y9HkcypeXQ"},
+    {name:"Way of Liberation",id:"1Wjbw0tVyW1acA2556yMQtXFSy2P_oo5d"},
+    {name:"Introduction to Hinduism",id:"1BAzZqFMRlU99TKz_lrQJOImqyujm68tp"},
+    {name:"On Hinduism",id:"1NWEZ-g5zPwuTFfF98x_oF6hG9Mv2R5sH"},
+    {name:"On Yoga",id:"1rUKFREpTM1hiScGuPaRSFywCSLLXM-fi"}
+  ]},
+  {name:"Zen Meditation",tracks:[
+    {name:"The Democratization of Buddhism",id:"1bvT45iCMmfAlSDK2-ibiglqsVAtk2XU9"},
+    {name:"The Controlled Accident",id:"1KoEmNP9hiH3V_ghqRbuLAfa1kME88Fld"},
+    {name:"Meditation",id:"1LBy6bIxqmRvuyUyL_QlugjV3PYJDOqdR"},
+    {name:"Zenrin Poems",id:"1jVw88GSXn-LoCUgMFFY_QM1Ta-8pjW8W"},
+    {name:"Art of Meditation",id:"10xE5vQmdZKxhw8x_G4LiC-_GXla2SplV"},
+    {name:"Why Not Now",id:"1ludexfahw_zS01kksaOFQfVNM5qW-Nc1"},
+    {name:"Introduction to a Contemplative Ritual",id:"1kkVjJPb2yCz23tjcK40cBgPAI-ShukJp"},
+    {name:"A Contemplative Ritual",id:"1gUuNrEXkSjZNYuv3eCP3NcWI4h-4MQj2"}
+  ]}
+];
+
+var RH = 38, VH = 254, VI = Math.floor(VH / RH);
+var DCS = ['#FE5000','#FF6B2B','#FF9E4A','#E8456B','#2DD4BF','#60A5FA','#A78BFA','#F472B6','#34D399','#FBBF24','#FB923C','#818CF8'];
+var MD = 'al', aI = 0, aS = 0, tI = 0, tS = 0, pA = -1, pT = -1, sT = null, dS = [];
+
+var $ = {lst:document.getElementById('lst'),sd:document.getElementById('sd-lbl'),pf:document.getElementById('prog-fill'),
+  pg:document.getElementById('prog'),np:document.getElementById('np'),nv:document.getElementById('np-cv'),
+  nt:document.getElementById('np-ti'),ns:document.getElementById('np-si'),
+  em:document.getElementById('np-em')};
+
+function DM(cv, idx, w, h) {
+  var dr, dg, cs=5, rs=5;
+  if (w >= 120) { dr=11; dg=6; }
+  else if (w >= 80) { dr=7; dg=3; }
+  else { dr=2.5; dg=1.5; }
+  var sp = 2*dr+dg;
+  var tx = cs*2*dr+(cs-1)*dg, ty = rs*2*dr+(rs-1)*dg, ox = (w-tx)/2, oy = (h-ty)/2;
+  var co = DCS[idx % DCS.length], pa = idx % 8, t = 0;
+  function drw() {
+    cx.clearRect(0,0,w,h); t += 0.05;
+    for (var r = 0; r < rs; r++) {
+      for (var c = 0; c < cs; c++) {
+        var x = ox+dr+c*sp, y = oy+dr+r*sp, a = 0.05, ph = (r*cs+c)*0.4;
+        switch (pa) {
+          case 0: a = 0.2+0.8*(0.5+0.5*Math.sin(t*3+ph)); break;
+          case 1: a = Math.abs(r-((t*1.5)%5))<1?0.9:0.08; break;
+          case 2: a = 0.15+0.85*(0.5+0.5*Math.sin(t*2-Math.sqrt(c*c+r*r)/2+ph*0.3)); break;
+          case 3: a = Math.abs(c-((t*1.2+r*0.7)%5))<0.8?0.85:0.06; break;
+          case 4: var bx=0.5+0.5*Math.sin(t*1.5),by=0.5+0.5*Math.cos(t*1.8);a=Math.max(0,0.9-(Math.abs(c/4-bx)+Math.abs(r/4-by))*1.2); break;
+          case 5: var fl=Math.sin(r*12.9898+c*78.233+pa*43.21)*43758.5453;fl-=Math.floor(fl);a=0.1+0.8*(0.5+0.5*Math.sin(t*3+fl*12)); break;
+          case 6: a = 0.1+0.85*(0.5+0.5*Math.sin(t*2-(c+r)/8*6)); break;
+          case 7: var p=0.5+0.5*Math.sin(t*2.5);a=((c+r)%2===0)?(0.2+0.8*p):(0.06+0.4*(1-p)); break;
+        }
+        cx.globalAlpha = Math.max(0.04,Math.min(1,a));
+        cx.fillStyle = co; cx.beginPath(); cx.arc(x,y,dr,0,Math.PI*2); cx.fill();
+      }
+    }
+    cx.globalAlpha = 1; ri = requestAnimationFrame(drw);
+  }
+  var cx = cv.getContext('2d');
+  var ri = requestAnimationFrame(drw);
+  return function(){ cancelAnimationFrame(ri); };
+}
+
+function SD() { dS.forEach(function(f){if(f)f();}); dS=[]; }
+
+var nDS = null;
+function nDSi(idx) { if(nDS)nDS(); nDS=DM($.nv, idx, 90, 90); }
+function nDSo() { if(nDS)nDS(); nDS=null; }
+
+function SB(sc, to) {
+  var sb = document.getElementById('sbar'), st = document.getElementById('stb');
+  var th = to*RH;
+  if (th > VH) {
+    sb.classList.add('sh');
+    var h = Math.max(20, VH*(VH/th)), mx = Math.max(1, to-VI);
+    st.style.height = h+'px';
+    st.style.top = (mx>0?(sc/mx)*(VH-h-8):0)+'px';
+  } else sb.classList.remove('sh');
+}
+
+function rA() {
+  $.sd.textContent = 'ALBUMS';
+  SD();
+  var mx = Math.max(0, ALBUMS.length-VI);
+  aS = Math.min(Math.max(0,aS), mx);
+  var f = document.createDocumentFragment();
+  for (var i = aS; i < ALBUMS.length && i < aS+VI+2; i++) {
+    var a = ALBUMS[i], r = document.createElement('div');
+    r.className = 'rw' + (i===aI?' sel':'');
+    if (a.tracks.length === 0) r.classList.add('nad');
+    var cv = document.createElement('canvas');
+    cv.className = 'dc'; cv.width = 28; cv.height = 28;
+    r.appendChild(cv);
+    var l = document.createElement('div');
+    l.className = 'lb'; l.textContent = a.name;
+    r.appendChild(l);
+    f.appendChild(r);
+    dS[i] = DM(cv, i, 28, 28);
+    (function(idx){r.addEventListener('pointerup',function(){aI=idx;if(ALBUMS[idx].tracks.length>0)sTr();});})(i);
+  }
+  $.lst.innerHTML = ''; $.lst.appendChild(f);
+  SB(aS, ALBUMS.length);
+}
+
+function rT() {
+  var al = ALBUMS[aI];
+  $.sd.textContent = al.name+' ('+al.tracks.length+')';
+  SD();
+  var mx = Math.max(0, al.tracks.length-VI);
+  tS = Math.min(Math.max(0,tS), mx);
+  var f = document.createDocumentFragment();
+  for (var i = tS; i < al.tracks.length && i < tS+VI+2; i++) {
+    var t = al.tracks[i], r = document.createElement('div');
+    var iP = pA===aI && pT===i;
+    r.className = 'rw' + (i===tI?' sel':'') + (iP?' ing':'');
+    var cv = document.createElement('canvas');
+    cv.className = 'dc'; cv.width = 28; cv.height = 28;
+    r.appendChild(cv);
+    var l = document.createElement('div');
+    l.className = 'lb'; l.textContent = t.name;
+    r.appendChild(l);
+    f.appendChild(r);
+    dS[i] = DM(cv, i+aI*DCS.length, 28, 28);
+    (function(idx){r.addEventListener('pointerup',function(){tI=idx;var a=ALBUMS[aI];if(a.tracks.length>0)pTk(aI,idx);});})(i);
+  }
+  $.lst.innerHTML = ''; $.lst.appendChild(f);
+  SB(tS, al.tracks.length);
+}
+
+function sNP() {
+  if (pA<0) return;
+  var a = ALBUMS[pA], t = a.tracks[pT];
+  $.ns.textContent = a.name;
+  $.nt.textContent = t.name;
+  nDSi(pT+pA*DCS.length);
+  $.np.classList.add('sh');
+  $.pg.classList.remove('idle');
+  $.pg.classList.add('playing');
+  MD = 'np';
+}
+
+function hNP() {
+  $.np.classList.remove('sh');
+  $.em.classList.remove('sh');
+  nDSo();
+  // Clear embed to stop audio
+  $.em.innerHTML = '';
+  MD = 'tr';
+  rT();
+}
+
+function sTr() { MD = 'tr'; tS = 0; tI = 0; rT(); }
+
+function sAl() {
+  $.np.classList.remove('sh');
+  $.em.classList.remove('sh');
+  nDSo();
+  $.em.innerHTML = '';
+  $.pg.classList.remove('playing');
+  $.pg.classList.add('idle');
+  $.pf.style.width = '0%';
+  MD = 'al'; rA();
+}
+
+function pTk(ai, ti) {
+  if (ai<0||ai>=ALBUMS.length) return;
+  var a = ALBUMS[ai];
+  if (ti<0||ti>=a.tracks.length) return;
+  pA=ai; pT=ti;
+  sNP();
+  // Load Google Drive embed player
+  $.em.classList.add('sh');
+  $.em.innerHTML = '<iframe src="https://drive.google.com/file/d/'+a.tracks[ti].id+'/preview" allow="autoplay" style="width:240px;height:282px;border:none;"></iframe>';
+}
+
+// No on-screen back button in np mode — use R1 side button / long press
+
+window.addEventListener('scrollUp',function(){
+  if(MD==='al'){if(aI<ALBUMS.length-1){aI++;if(aI>aS+VI-1)aS++;rA();}}
+  else if(MD==='tr'){var a=ALBUMS[aI];if(tI<a.tracks.length-1){tI++;if(tI>tS+VI-1)tS++;rT();}}
+  // scroll does nothing in np mode - use embed's controls
+});
+window.addEventListener('scrollDown',function(){
+  if(MD==='al'){if(aI>0){aI--;aS=Math.min(aS,aI);rA();}}
+  else if(MD==='tr'){if(tI>0){tI--;tS=Math.min(tS,tI);rT();}}
+  // scroll does nothing in np mode - use embed's controls
+});
+
+window.addEventListener('longPressStart',function(){
+  if(MD==='al'){if(ALBUMS[aI].tracks.length>0)sTr();}
+  else if(MD==='tr'){var a=ALBUMS[aI];if(a.tracks.length>0)pTk(aI,tI);}
+  else if(MD==='np')hNP();
+});
+
+window.addEventListener('sideClick',function(){
+  if(MD==='np')hNP();
+  else if(MD==='tr')sAl();
+});
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowUp'){e.preventDefault();window.dispatchEvent(new Event('scrollUp'));}
+  if(e.key==='ArrowDown'){e.preventDefault();window.dispatchEvent(new Event('scrollDown'));}
+  if(e.key==='Escape')window.dispatchEvent(new Event('sideClick'));
+  if(e.key===' '&&!e.repeat){e.preventDefault();window.dispatchEvent(new Event('longPressStart'));}
+  if(e.key==='Enter'){e.preventDefault();window.dispatchEvent(new Event('longPressStart'));}
+  if(e.key==='b'){if(MD==='np')hNP();else if(MD==='tr')sAl();}
+});
+
+rA();
+</script>
+</body>
+</html>
